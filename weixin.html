@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .weibo {
+      width: 600px;
+      border: 1px solid #ccc;
+
+      margin: 100px auto;
+      padding: 10px;
+
+    }
+
+    .weibo-text {
+      width: 590px;
+      height: 140px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      outline: none;
+      resize: none;
+    }
+
+    .weibo-text:focus {
+      border-color: #f60;
+    }
+
+    .weibo-btn {
+      width: 80px;
+      height: 30px;
+      background-color: #f90;
+      color: #fff;
+      border: 0 none;
+      margin-top: 5px;
+      border-radius: 3px;
+      cursor: pointer;
+      outline: 0 none;
+    }
+
+    .weibo-list {
+      padding-top: 10px;
+    }
+
+    .weibo-list li {
+      font-size: 14px;
+      line-height: 30px;
+      border-bottom: 1px dotted #ccc;
+      overflow: hidden;
+    }
+
+    .weibo-list li p {
+      float: left;
+    }
+
+    .weibo-list li span {
+      float: right;
+      cursor: pointer;
+    }
+
+    .weibo-list li input {
+      height: 24px;
+      line-height: 24px;
+      width: 300px;
+      font-size: 14px;
+      border: 0 none;
+    }
+
+    .time {
+      margin-right: 10px;
+      font-style: normal;
+      float: right;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="weibo">
+    <textarea class="weibo-text"></textarea>
+    <input class="weibo-btn" value="发布" type="button">
+    <ul class="weibo-list">
+      <!-- <li>
+            <p class="content">快来收了这九款用上就停不下来的应用吧！！</p>
+            <span class="time"></span>
+            <span class="del">删除</span>
+        </li> -->
+    </ul>
+  </div>
+</body>
+<script src="./kits.js"></script>
+<script>
+  /* 
+     效果：
+       1.点击发布，还是可以生成一条新的li
+       2.点击删除，也是可以删掉某条li
+       3.刷新或者是重新打开，还是保留着原来的数据
+   
+     实现数据保存的思路：
+       在一个地方，把新增的和删除的数据保存起来， - localStorage
+         当页面一开始加载的时候，读取这些数据，动态生成ul里面的内容
+         当我们点击新增，把新增的数据，更新到存储的数据里面
+         当我们点击删除，把对应的数据从存储的地方，移除
+   */
+  /* 
+  需要在一开始的时候，就把本地存储里面的数据，读取出来，把原本的旧的数据加载在页面中 
+  */
+  //  先获取元素
+  let btn = document.querySelector('.weibo-btn');
+  let text = document.querySelector('.weibo-text');
+  let ul = document.querySelector('.weibo-list');
+
+
+
+  // 把数据从本地存储中读取
+  // getItem  串联的意思
+  // 在一个地方，把新增的和删除的数据保存起来， - localStorage
+  let datas = localStorage.getItem('weibo');
+  // 现在已经把新旧的值给连起来了
+  // parse() 方法可解析一个日期时间字符串，并返回 1970/1/1 午夜距离该日期时间的毫秒数。
+  datas = JSON.parse(datas);
+  // 给他一个判断语句防止没有数据的时候出现bug
+  datas = datas || [];
+  // 需要在一开始的是根据旧的数据把旧数据展示
+  // forEach 为每一个
+  // forEach的作用是遍历前面的这个数组
+  datas.forEach(function (e, i) {
+    // 只要动态生成元素，就会把原来的数据展示出来
+    // 创建一个新的li
+    let li = document.createElement('li');
+    li.innerHTML = '<p class="content">' + e.content + '</p>' +
+      '<span class="del" data-id="' + e.id + '">删除</span>' +
+      '<span class="time">' + e.time + '</span>';
+    // appendChild() 方法可向节点的子节点列表的末尾添加新的子节点。
+    // appendChild  添加
+    ul.appendChild(li);
+  });
+  /* 因为此时没有数据我们先实现新增 */
+  // 定义一个数组，使用这个数组存储我们要新增的数据 
+  // var datas = [];
+  // 注册事件
+  btn.onclick = function () {
+    // 获取文本域的内容
+    let content = text.value;
+    //  判读是否为空
+    if (content.trim().length === 0) {
+      alert('请输入文字，再发布')
+      return;
+    }
+    // 生成一个时间
+    let time = kits.formatDate();
+    // 生成一个新的li
+    let li = document.createElement('li');
+    // 给这个li添加内容  添加文本内容和时间还有删除
+    li.innerHTML = '<p class="content">' + content + '</p>' +
+      '<span class="del">删除</span>' +
+      '<span class="time">' + time + '</span>';
+    // 把它插到ul的最前， 也就是文本框下面的最上面的那一个
+    //       insertBefore() 方法在已有的子节点之前插入一个新的子节点。
+    // 该方法返回这个新的子节点。
+    // children() 函数获取指定节点的子节点。
+    ul.insertBefore(li, ul.children[0]);
+    // 把文本域清空
+    text.value = '';
+
+    /*
+    点击之后，为了我们刷新之后还是有数据，把这些数据存储起来
+    有多条数据 —— 使用数组的方式存储 - 需要在外面先定义一个数组
+    数组里面方法每条数据
+    每条数据包含至少两个东西
+      - 内容
+      - 发布的时间
+      就是用对象进行存储
+      {content:'内容',time:'发布时间'}
+      每次点击就是一个新的对象，放到数组里面，把数组存到本地存储里面即可
+  */
+    //  定义一个对象
+    let obj = {
+      // 把文本的内容传进来了当数值使用
+      content: content,
+      // 把时间传进来当数值使用
+      time: time
+    }
+    // 把这个数据放到数组里面的最前面
+    // unshift() 方法可向数组的开头添加一个或更多元素，并返回新的长度。
+    datas.unshift(obj);
+    // 把数组存储到一个变量
+    //  stringify 字符串化
+    let json = JSON.stringify(datas);
+    //  / 把数组存储到localStorage里面
+    // 在一个地方，把新增的和删除的数据保存起来， - localStorage
+    // setItem 键的意思
+    localStorage.setItem('weibo', json);
+
+  }
+
+  //     1.获取元素
+  //     2.注册按键事件
+  //     3.判断按下的是否是组合键： ctrl+回车
+  //     4.如果是就把之前发布的流程再来一次
+  // */
+  // //给文本域注册键盘事件
+  // // onkeydown 事件会在用户按下一个键盘按键时发生。
+  // // ctrlKey 事件属性可返回一个布尔值，指示当事件发生时，Ctrl 键是否被按下并保持住。
+  // // onkeydown 事件会在用户按下一个键盘按键时发生。
+  // 注册事件
+  text.onkeydown = function (event) {
+    // 判断是否按下快捷键 ctrl+回车键
+    if (event.ctrlKey && event.keyCode === 13) {
+      btn.onclick();
+    }
+  }
+
+
+
+
+
+  //实现删除
+  // 所有的元素都是动态生成的，有可能一开始获取不到的，需要使用委托的方式实现删除
+  // 先获取元素
+  ul.addEventListener('click', function (e) {
+    // if(e.target.className === 'del') // 这样写有一定的风险 如果它类名不仅仅只有一个，这样就不行了
+    if (e.target.classList.contains('del')) {//判断的是元素身上是否包含某个类名
+      //就是点击了删除
+      ul.removeChild(e.target.parentNode);
+      // 不仅要删除li，还要删除本地存储中对应的数据
+      /* 删除数据的常见的办法：给数据设置一个不会重复的id，根据id到数组里面查找
+          需要在生成数据的时候，先给id,
+          然后在我们生成结构的时候，把id存储到删除这个span的自定义属性身上
+      */
+      // 获取点击的删除身上的id
+      let id = e.target.dataset.id;
+      //  console.log(id);
+      //  把本地存储中的对应的数据移除
+      datas.forEach(function (e, i) {
+        if (e.id == id) {
+          //数组.splice(从哪里开始删除,删除多少个);
+          datas.splice(i, 1)
+        }
+      })
+      // 把新的datas覆盖回本地存储里面
+      let json = JSON.stringify(datas);
+      //  / 在一个地方，把新增的和删除的数据保存起来， - localStorage
+      localStorage.setItem('weibo', json)
+    }
+  })
+</script>
+
+</html>
